@@ -3,6 +3,7 @@ local redPoints, bluePoints = 0, 0
 local currentZone = nil
 local showHud = false
 local blink = false
+local QBCore = exports['qb-core']:GetCoreObject()
 
 RegisterNetEvent('conquest:updateHud')
 AddEventHandler('conquest:updateHud', function(red, blue, zone)
@@ -49,4 +50,28 @@ end
 RegisterNetEvent('conquest:syncPoints')
 AddEventHandler('conquest:syncPoints', function(red, blue, zoneName)
     TriggerEvent('conquest:updateHud', red, blue, zoneName)
+end)
+
+
+
+RegisterNetEvent('conquest:setZoneHUD')
+AddEventHandler('conquest:setZoneHUD', function(zoneName)
+    local playerData = QBCore.Functions.GetPlayerData()
+    local myTeam = playerData and playerData.metadata and playerData.metadata.conquestTeam or nil
+    if not myTeam then return end
+
+    TriggerEvent('conquest:updateHud', 0, 0, zoneName)
+end)
+
+RegisterNetEvent('conquest:startCaptureVisual')
+AddEventHandler('conquest:startCaptureVisual', function(zoneIndex, team)
+    local playerData = QBCore.Functions.GetPlayerData()
+    local myTeam = playerData and playerData.metadata and playerData.metadata.conquestTeam or nil
+    if not myTeam then return end
+
+    local name = Config.Zones[zoneIndex] and Config.Zones[zoneIndex].name or "Zona"
+    BeginTextCommandThefeedPost("STRING")
+    AddTextComponentSubstringPlayerName("⚔️ Tu equipo está capturando: " .. name)
+    EndTextCommandThefeedPostMessagetext("CHAR_MP_MORS_MUTUAL", "CHAR_MP_MORS_MUTUAL", false, 8, "Conquista", "Captura activa")
+    EndTextCommandThefeedPostTicker(false, true)
 end)
