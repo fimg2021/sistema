@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conquest Scoreboard</title>
+  <style>
+    body {
+      margin: 0;
+      background: transparent; /* Cambiado de negro a transparente */
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      pointer-events: none; /* Para no interferir si no está activo */
+    }
+    .scoreboard {
+      background: rgba(0, 0, 0, 0.85);
+      border: 3px solid #ff0000;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 600px;
+      max-width: 90vw;
+      animation: slideIn 0.8s ease-out;
+      display: none; /* Oculto por defecto */
+    }
+    .scoreboard h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #ff4444;
+    }
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .entry span {
+      font-size: 1.1rem;
+    }
+    .entry.red span.name { color: #ff4444; }
+    .entry.blue span.name { color: #4488ff; }
+    @keyframes slideIn {
+      0% { opacity: 0; transform: translateY(100px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="scoreboard" id="scoreboard">
+    <h1>🏆 Conquista Final</h1>
+    <div id="entries"></div>
+  </div>
+
+  <script>
+    window.addEventListener("message", function (event) {
+      const data = event.data;
+      if (data.type === "conquest-scoreboard") {
+        const entries = document.getElementById("entries");
+        const scoreboard = document.getElementById("scoreboard");
+
+        entries.innerHTML = "";
+        scoreboard.style.display = "block";
+        document.body.style.background = "#0d0d0d";
+        document.body.style.pointerEvents = "auto";
+
+        data.players.forEach((p) => {
+          const div = document.createElement("div");
+          div.classList.add("entry");
+          div.classList.add(p.team.toLowerCase());
+          div.innerHTML = `
+            <span class="name">${p.name}</span>
+            <span class="team">${p.team}</span>
+            <span class="score">${p.captures} capturas</span>
+          `;
+          entries.appendChild(div);
+        });
+
+        // Ocultar después de 15s
+        setTimeout(() => {
+          scoreboard.style.display = "none";
+          document.body.style.background = "transparent";
+          document.body.style.pointerEvents = "none";
+        }, 15000);
+      }
+    });
+  </script>
+</body>
+</html>
