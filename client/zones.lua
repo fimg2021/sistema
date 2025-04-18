@@ -1,50 +1,39 @@
--- client/zones.lua (PolyZone + visualizador debug activado + CORRECTO uso de CircleZone)
+local QBCore = exports['qb-core']:GetCoreObject()
+local playerData = QBCore.Functions.GetPlayerData()
+local myTeam = playerData and playerData.metadata and playerData.metadata.conquestTeam or nil
+if not myTeam then
+    print("[CLIENT][zones.lua] Ignorado por falta de equipo")
+    return
+end
 
-CircleZone = CircleZone
+CircleZone = CircleZone or nil
+local conquestZones = {}
 
-local ZoneList = {}
-local currentZone = nil
-local insideZone = false
-local captureTimer = 0
-local captureActive = false
+for i, zoneData in ipairs(Config.Zones) do
+    local zone = CircleZone:Create(zoneData.coords, zoneData.radius, {
+        name = "conquest_zone_" .. i,
+        debugPoly = false
+    })
 
-CreateThread(function()
-    for i, zone in ipairs(Config.Zones) do
-        local poly = CircleZone:Create(zone.coords, 15.0, {
-            name = "conquest_zone_" .. i,
-            useZ = false,
-            debugPoly = true -- ✅ activa visualizador debug
-        })
+    zone:onPlayerInOut(function(isInside)
+        if isInside then
+            TriggerServerEvent("conquest:enteredZone", i)
+        else
+            TriggerServerEvent("conquest:leftZone", i)
+        end
+    end)
 
-        poly:onPlayerInOut(function(isPointInside)
-            if isPointInside then
-                currentZone = i
-                insideZone = true
-                TriggerServerEvent('conquest:enteredZone', i)
-                TriggerEvent('conquest:setZoneHUD', zone.name)
-            else
-                insideZone = false
-                TriggerServerEvent('conquest:leftZone', i)
-                currentZone = nil
-            end
-        end)
+    conquestZones[i] = zone
+end
 
-        table.insert(ZoneList, poly)
+RegisterNetEvent('conquest:updateZoneOwnership')
+AddEventHandler('conquest:updateZoneOwnership', function(ownership)
+    for i, team in pairs(ownership) do
+        updateZoneVisual(i, team)
     end
 end)
 
--- Actualiza HUD con la zona activa para más facha
-RegisterNetEvent('conquest:setZoneHUD')
-AddEventHandler('conquest:setZoneHUD', function(zoneName)
-    TriggerEvent('conquest:updateHud', 0, 0, zoneName)
-end)
-
--- Evento visual opcional: pulso cuando se está capturando
-RegisterNetEvent('conquest:startCaptureVisual')
-AddEventHandler('conquest:startCaptureVisual', function(zoneIndex, team)
-    local name = Config.Zones[zoneIndex] and Config.Zones[zoneIndex].name or "Zona"
-    BeginTextCommandThefeedPost("STRING")
-    AddTextComponentSubstringPlayerName("⚔️ Tu equipo está capturando: " .. name)
-    EndTextCommandThefeedPostMessagetext("CHAR_MP_MORS_MUTUAL", "CHAR_MP_MORS_MUTUAL", false, 8, "Conquista", "Captura activa")
-    EndTextCommandThefeedPostTicker(false, true)
-end)
+function updateZoneVisual(index, team)
+    -- Aquí podés aplicar efectos visuales como cambiar color del HUD, mostrar blips, etc.
+    print(("[CLIENT][zones.lua] Zona %s ahora pertenece a: %s"):format(index, team))
+end
